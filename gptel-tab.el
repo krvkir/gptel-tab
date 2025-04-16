@@ -16,7 +16,7 @@
   "krvkir's functions for reading and writing prose."
   :group 'convenience)
 
-(defcustom gptel-tab-verbose t
+(defcustom gptel-tab-verbose nil
   "Be verbose and exhaustively write things to Messages buffer."
   :type 'boolean
   :group 'gptel-tab)
@@ -67,8 +67,9 @@ restored or saved to `.emacs.desktop` file.
     ;; ... for now, file properties are not supported
     (gptel-context-add-file (plist-get entry :file)))))
 
-
 ;;* Save current context to the store
+;; TODO Replace hash table with alist/plist/whatever to make the structure serializable
+;;      and enable saving context to desktop-file.
 
 (defun gptel-tab--save-current-tab-context ()
   "Save the current tab's GPTel context into `gptel-tab--tab-contexts`."
