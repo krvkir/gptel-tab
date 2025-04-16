@@ -2,11 +2,24 @@
 ;; Author: Kirill Krasnoshchekov <krvkir@gmail.com>
 ;; Version: 0.1
 ;; Package-Requires: (gptel tab-bar)
-;; Keywords: convenienct
+;; Keywords: convenience
 ;; URL: https://github.com/krvkir/gptel-tab
+
+;;; Code:
 
 (require 'tab-bar)
 (require 'gptel)
+
+;;* Customizations
+
+(defgroup gptel-tab nil
+  "krvkir's functions for reading and writing prose."
+  :group 'convenience)
+
+(defcustom gptel-tab-verbose t
+  "Be verbose and exhaustively write things to Messages buffer."
+  :type 'boolean
+  :group 'gptel-tab)
 
 ;;* Variables definition
 
@@ -61,13 +74,16 @@ restored or saved to `.emacs.desktop` file.
   "Save the current tab's GPTel context into `gptel-tab--tab-contexts`."
   (interactive)
   (let ((context-copy (mapcar #'gptel-tab--serialize-context-entry gptel-context--alist)))
-    (message "%d elements in context copy, %d elemeints in gptel-context--alist."
-	     (length context-copy)
-	     (length gptel-context--alist))
+    (when gptel-tab-verbose
+      (message
+       "[gptel-tab/save] %d elements in context copy, %d elemeints in gptel-context--alist."
+       (length context-copy)
+       (length gptel-context--alist)))
     ;; Copy current context list for storage.
     ;; ... use saved tab-name to handle state when we're in the new tab
     ;; and want to save the context before restoring saved one.
-    (message "Saving context into tab %s" gptel-tab--current-tab-name)
+    (when gptel-tab-verbose
+      (message "[gptel-tab/save] Saving context into tab %s" gptel-tab--current-tab-name))
     (puthash gptel-tab--current-tab-name context-copy gptel-tab--tab-contexts)))
 
 (defvar gptel-context-changed-hook nil
@@ -88,11 +104,13 @@ restored or saved to `.emacs.desktop` file.
   "Restore GPTel context for tab named TAB-NAME from `gptel-tab--tab-contexts`."
   (let* ((stored-context (gethash tab-name gptel-tab--tab-contexts)))
     ;; Clear the old context.
-    (message "Current tab name is: %s" gptel-tab--current-tab-name)
-    (message "Tab name to restore is: %s" tab-name)
-    (message "%d elements in stored context." (length stored-context))
+    (when gptel-tab-verbose
+      (message "[gptel-tab/restore] Current tab name is: %s" gptel-tab--current-tab-name)
+      (message "[gptel-tab/restore] Tab name to restore is: %s" tab-name)
+      (message "[gptel-tab/restore] %d elements in stored context." (length stored-context)))
     (gptel-context-remove-all)
-    (message "%d elements in stored context." (length stored-context))
+    (when gptel-tab-verbose
+      (message "[gptel-tab/restore] %d elements in stored context." (length stored-context)))
     ;; Add entries from stored context.
     (mapcar #'gptel-tab--restore-context-entry stored-context)
     ;; Update context buffer view
@@ -113,14 +131,16 @@ restored or saved to `.emacs.desktop` file.
     (when (and
 	   has-explicit-name
 	   (not (equal current-name gptel-tab--current-tab-name)))
-      (message ">>>>>>>>>>>>>>>> Switching tab context: %s to %s"
-	       gptel-tab--current-tab-name current-name)
+      (when gptel-tab-verbose
+	(message "[gptel-tab/switch] Switching tab context: %s to %s"
+		 gptel-tab--current-tab-name current-name))
       ;; Tab changed (or first time initialization)
-      (gptel-tab--save-current-tab-context)	 ; save old tab
+      (gptel-tab--save-current-tab-context)	      ; save old tab
       (setq gptel-tab--current-tab-name current-name) ; update current tab
       (gptel-tab--restore-tab-context current-name)
-      (gptel-tab--save-current-tab-context)	 ; save old tab
-      (message "Finished switching tab context <<<<<<<<<<<<<<<<"))))
+      (gptel-tab--save-current-tab-context) ; save old tab
+      (when gptel-tab-verbose
+	(message "[gptel-tab/switch] Finished switching tab context.")))))
 
 (add-hook 'window-configuration-change-hook #'gptel-tab--tab-switch-hook)
 

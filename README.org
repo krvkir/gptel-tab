@@ -4,7 +4,7 @@
 
 ~gptel-tab~ is an Emacs package that provides tab-specific contexts for the ~gptel~ package. It automatically saves and restores GPTel context data when switching tabs, ensuring that your context remains consistent across different tabs.
 
-**ATTENTION! THIS IS A WORK IN PROGRESS, THINGS MAY GLITCH.**
+*ATTENTION! THIS IS A WORK IN PROGRESS, THINGS MAY GLITCH.*
 
 * How it works
 
