@@ -1,4 +1,6 @@
-#+HEADER: gptel-tab
+#+TITLE: gptel-tab
+
+ATTENTION! THIS IS A WORK IN PROGRESS, THINGS MAY GLITCH.
 
 * Introduction
 
