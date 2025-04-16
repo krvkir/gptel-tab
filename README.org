@@ -1,0 +1,52 @@
+#+HEADER: gptel-tab
+
+* Introduction
+
+~gptel-tab~ is an Emacs package that provides tab-specific contexts for the ~gptel~ package. It automatically saves and restores GPTel context data when switching tabs, ensuring that your context remains consistent across different tabs.
+
+* How it works
+
+~gptel-tab~ uses emacs tab-bar tabs (not to be confused with tab-line tabs!) as work scope tags.
+
+We assume that within a tab you set up your windows and buffers and work on some single task, so it's reasonable to suggest you also want to set up ~gptel~ context for this task. And if you work on different task, you create another tab for it.
+
+This solves the problem of deciding which context to use when adding something from arbitrary buffer not connected to a project or chat window, or invoking an LLM in arbitrary buffer. It also allows to use one file in several contexts (with some limitations, see below).
+
+*No manual context switching is required. No extra commands or menus. Just switch to the right tab and work with ~gptel~ as usual.*
+
+(Only named tabs are considered as scopes. If you switch to unnamed tab, previous context will be kept.)
+
+* Installation
+
+You can install it With ~use-package~:
+
+#+begin_src emacs-lisp
+(use-package gptel-tab
+	   :vc "https://github.com/krvkir/gptel-tab"
+	   :after gptel)
+#+end_src
+
+Or you can just clone the repo and load the file.
+
+* Setting up
+
+Everything is set up upon loading the package: just check how contexts are changing when you switch tabs. (Remember: only named tabs are used!)
+
+If you use ~desktop-save~ mode, you may want contexts to persist over emacs restarts. For that, add ~gptel-tab--tab-contexts~ and ~gptel-tab--current-tab-name~ variables into ~Desktop Globals To Save~ option of ~desktop~ group.
+
+* Implementation Details
+
+~gptel-tab~ works by saving and restoring GPTel context data whenever you switch tabs or change context. Internally, ~gptel-tab~ keeps a list with contexts for each tab and uptates it on important evetns.
+
+Since we can't directly track tab switches, the package hooks into ~window-configuration-change-hook~ and checks if tab bar name changed.
+
+Since ~gptel~ doesn't provide methods to access its context, ~gptel-tab~ gets it directly from internal ~gptel-context--alist~ variable. The same it tracks context changes, by advicing to functions that add or remove context. This is fragile and may break if ~gptel~ internals would change.
+
+* Limitations
+
+** Borders of selected regions are not updated on inactive tabs.
+
+For example, if you edit one file on several tabs (say it's your ~.emacs~ file which you constantly tweak, or org journal file where you write your thoughts from various projects), and add regions of those files to the context, then those regions will become invalid (will have wrong start and end lines) when you switch back and forth between tabs.
+
+In such cases, I recommend to add those files as the whole files, not regions or buffers.
+
