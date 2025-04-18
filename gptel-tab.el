@@ -151,26 +151,23 @@ restored or saved to `.emacs.desktop` file.
 
 (add-hook 'window-configuration-change-hook #'gptel-tab--tab-switch-hook)
 
-;; Hook for new tabs – initialize empty context store
-;; (add-hook 'tab-bar-tab-post-open-functions
-;;           (lambda (tab)
-;;             ;; tab is the alist for the new tab (with 'name etc.)
-;;             (let ((name (alist-get 'name tab)))
-;;               (puthash name nil gptel-tab--tab-contexts)
-;;               (setq gptel-tab--current-tab-name name))))
+;;* Auxilliary functions 
 
 ;; Advice for tab renaming – move context to new name key
-;; (advice-add #'tab-bar-rename-tab :around
-;; 	    (lambda (orig-fun &rest args)
-;; 	      ; current name before rename
-;; 	      (let ((old-name (alist-get 'name (tab-bar--current-tab)))) 
-;; 		(apply orig-fun args)	; perform rename
-;; 		(let ((new-name (alist-get 'name (tab-bar--current-tab))))
-;; 		  (when (and old-name new-name (not (equal old-name new-name)))
-;; 		    ;; Transfer context mapping to new name
-;; 		    (puthash new-name (gethash old-name gptel-tab--tab-contexts) gptel-tab--tab-contexts)
-;; 		    (remhash old-name gptel-tab--tab-contexts)
-;; 		    (setq gptel-tab--current-tab-name new-name))))))
+(defun gptel-tab--handle-tab-rename (orig-fun &rest args)
+  (let* ((old-name (alist-get 'name (tab-bar--current-tab)))
+		 (old-entry (assoc old-name gptel-tab--tab-contexts)))
+	(apply orig-fun args)				; perform rename
+	(let ((new-name (alist-get 'name (tab-bar--current-tab))))
+	  (when (and old-name
+				 new-name
+				 (not (equal old-name new-name))
+				 old-entry)
+		;; Transfer context mapping to new name
+		(setcar old-entry new-name)
+		(setq gptel-tab--current-tab-name new-name)))))
+
+(advice-add #'tab-bar-rename-tab :around #'gptel-tab--handle-tab-rename)
 
 ;;* Saving and restoring sessions with desktop file.
 
