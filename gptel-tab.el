@@ -23,7 +23,7 @@
 
 ;;* Variables definition
 
-(defvar gptel-tab--tab-contexts (make-hash-table :test 'equal)
+(defvar gptel-tab--tab-contexts nil
   "Mapping of tab names to their GPTel context data (alist format).")
 
 (defvar gptel-tab--current-tab-name nil "Last active tab name for context tracking.")
@@ -38,14 +38,14 @@ restored or saved to `.emacs.desktop` file.
       ;; Buffer context:
       ;; store file name or buffer name + region positions
       (let* ((buf (car entry))
-	     (buf-id (or (buffer-file-name buf)
-			 (buffer-name buf)))
-	     ;; store as (:buffer "Name") or "/path/to/file"
-	     (regions (mapcar (lambda (ov)
-				(cons (overlay-start ov)
-				      (overlay-end ov)))
-			      (cdr entry))))
-	`(:buffer ,buf-id :regions ,regions))
+			 (buf-id (or (buffer-file-name buf)
+						 (buffer-name buf)))
+			 ;; store as (:buffer "Name") or "/path/to/file"
+			 (regions (mapcar (lambda (ov)
+								(cons (overlay-start ov)
+									  (overlay-end ov)))
+							  (cdr entry))))
+		`(:buffer ,buf-id :regions ,regions))
     ;; File context (key is file path string)
     `(:file ,(car entry))))
 
@@ -85,7 +85,11 @@ restored or saved to `.emacs.desktop` file.
     ;; and want to save the context before restoring saved one.
     (when gptel-tab-verbose
       (message "[gptel-tab/save] Saving context into tab %s" gptel-tab--current-tab-name))
-    (puthash gptel-tab--current-tab-name context-copy gptel-tab--tab-contexts)))
+    ;; (puthash gptel-tab--current-tab-name context-copy gptel-tab--tab-contexts)
+	(let ((entry (assoc gptel-tab--current-tab-name gptel-tab--tab-contexts)))
+	  (if entry
+		  (setcdr entry context-copy)
+		(push (cons gptel-tab--current-tab-name context-copy) gptel-tab--tab-contexts)))))
 
 (defvar gptel-context-changed-hook nil
   "Hook run after GPTel context is modified.")
@@ -103,7 +107,9 @@ restored or saved to `.emacs.desktop` file.
 
 (defun gptel-tab--restore-tab-context (tab-name)
   "Restore GPTel context for tab named TAB-NAME from `gptel-tab--tab-contexts`."
-  (let* ((stored-context (gethash tab-name gptel-tab--tab-contexts)))
+  (let* (;; (stored-context (gethash tab-name gptel-tab--tab-contexts))
+		 (entry (assoc tab-name gptel-tab--tab-contexts))
+		 (stored-context (cdr entry)))
     ;; Clear the old context.
     (when gptel-tab-verbose
       (message "[gptel-tab/restore] Current tab name is: %s" gptel-tab--current-tab-name)
