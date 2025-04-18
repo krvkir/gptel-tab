@@ -13,7 +13,7 @@
 ;;* Customizations
 
 (defgroup gptel-tab nil
-  "krvkir's functions for reading and writing prose."
+  "Bind gptel context to tab-bar tabs."
   :group 'convenience)
 
 (defcustom gptel-tab-verbose nil
