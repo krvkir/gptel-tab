@@ -32,22 +32,18 @@
 
 (defun gptel-tab--serialize-context-entry (entry)
   "Makes a serializable representation of context entry which could be later
-restored or saved to `.emacs.desktop` file.
-"
+restored or saved to `.emacs.desktop` file."
   (if (bufferp (car entry))
-      ;; Buffer context:
-      ;; store file name or buffer name + region positions
-      (let* ((buf (car entry))
-			 (buf-id (or (buffer-file-name buf)
-						 (buffer-name buf)))
-			 ;; store as (:buffer "Name") or "/path/to/file"
-			 (regions (mapcar (lambda (ov)
-								(cons (overlay-start ov)
-									  (overlay-end ov)))
-							  (cdr entry))))
+	  ;; Buffer context:
+	  ;; store file name or buffer name + region positions
+	  (let* ((buf (car entry))
+			 (buf-id
+			  (or (buffer-file-name buf) (buffer-name buf)))
+			 (regions
+			  (mapcar (lambda (ov) (cons (overlay-start ov) (overlay-end ov))) (cdr entry))))
 		`(:buffer ,buf-id :regions ,regions))
-    ;; File context (key is file path string)
-    `(:file ,(car entry))))
+	;; File context (key is file path string)
+	`(:file ,(car entry))))
 
 (defun gptel-tab--restore-context-entry (entry)
   "Adds context entry based on its serialized representation."
