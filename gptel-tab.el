@@ -25,6 +25,24 @@
 
 (defvar gptel-tab--current-tab-name nil "Last active tab name for context tracking.")
 
+;;* Tools saving and restoring
+
+(defun gptel-tab--get-tool-names ()
+  "Get list of the names of currently active tools."
+  (mapcar #'gptel-tool-name gptel-tools)
+  )
+
+(defun gptel-tab--restore-tools (tool-names)
+  "Given a list of TOOL-NAMES, set those tools as active."
+  (setq gptel-tools
+		(cl-loop
+		 for (category . tools-alist) in gptel--known-tools
+		 append
+		 (cl-loop
+		  for (name . tool) in tools-alist
+		  do (message name)
+		  if (member name tool-names) collect tool))))
+
 ;;* Context serialization and restoration
 
 (defun gptel-tab--serialize-context-entry (entry)
@@ -49,40 +67,45 @@ restored or saved to `.emacs.desktop` file."
    ((plist-member entry :buffer)
     ;; Get buffer by its id.
     (let* ((buf-id (plist-get entry :buffer))
-	   (buf (or (get-file-buffer buf-id)
-		    (get-buffer buf-id))))
+		   (buf (or (get-file-buffer buf-id)
+					(get-buffer buf-id))))
       ;; Restore all its regions.
       (dolist (pos (plist-get entry :regions))
-	(with-current-buffer buf
-	  (gptel-context--make-overlay (car pos) (cdr pos))))))
+		(with-current-buffer buf
+		  (gptel-context--make-overlay (car pos) (cdr pos))))))
    ;; File context: ("/path/to/file" . props) or ("/path/to/file" . ((start . end)...))
    ((plist-member entry :file)
     ;; ... for now, file properties are not supported
-    (gptel-context-add-file (plist-get entry :file)))))
+    (gptel-context-add-file (plist-get entry :file)))
+   ;; Tools: list of tool names
+   ((plist-member entry :tools)
+    ;; ... for now, file properties are not supported
+    (gptel-tab--restore-tools (plist-get entry :tools)))))
 
 ;;* Save current context to the store
-;; TODO Replace hash table with alist/plist/whatever to make the structure serializable
-;;      and enable saving context to desktop-file.
 
 (defun gptel-tab--save-current-tab-context ()
   "Save the current tab's GPTel context into `gptel-tab--tab-contexts`."
   (interactive)
-  (let ((context-copy (mapcar #'gptel-tab--serialize-context-entry gptel-context--alist)))
+  (let* ((entry (assoc gptel-tab--current-tab-name gptel-tab--tab-contexts))
+		 (tool-names (gptel-tab--get-tool-names))
+		 (context-copy
+		  (cons
+		   `(:tools ,tool-names)
+		   (mapcar #'gptel-tab--serialize-context-entry gptel-context--alist))))
     (when gptel-tab-verbose
       (message
-       "[gptel-tab/save] %d elements in context copy, %d elemeints in gptel-context--alist."
+       "[gptel-tab/save] Saving context into tab %s. %d elements in context copy, %d elemeints in gptel-context--alist, %d tools active."
+	   gptel-tab--current-tab-name
        (length context-copy)
-       (length gptel-context--alist)))
+       (length gptel-context--alist)
+	   (length tool-names)))
     ;; Copy current context list for storage.
     ;; ... use saved tab-name to handle state when we're in the new tab
-    ;; and want to save the context before restoring saved one.
-    (when gptel-tab-verbose
-      (message "[gptel-tab/save] Saving context into tab %s" gptel-tab--current-tab-name))
-    ;; (puthash gptel-tab--current-tab-name context-copy gptel-tab--tab-contexts)
-	(let ((entry (assoc gptel-tab--current-tab-name gptel-tab--tab-contexts)))
-	  (if entry
-		  (setcdr entry context-copy)
-		(push (cons gptel-tab--current-tab-name context-copy) gptel-tab--tab-contexts)))))
+    ;;     and want to save the context before restoring saved one.
+	(if entry
+		(setcdr entry context-copy)
+	  (push (cons gptel-tab--current-tab-name context-copy) gptel-tab--tab-contexts))))
 
 (defvar gptel-context-changed-hook nil
   "Hook run after GPTel context is modified.")
@@ -171,3 +194,4 @@ restored or saved to `.emacs.desktop` file."
 (add-hook 'desktop-after-read-hook #'gptel-tab--restore-current-tab-context)
 
 (provide 'gptel-tab)
+;;; gptel-tab.el ends here
