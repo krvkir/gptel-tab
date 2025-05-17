@@ -13,14 +13,10 @@
 
 ;;* Customizations
 
-(defgroup gptel-tab nil
-  "Bind gptel context to tab-bar tabs."
-  :group 'convenience)
-
 (defcustom gptel-tab-verbose nil
-  "Be verbose and exhaustively write things to Messages buffer."
+  "Be verbose and exhaustively write things to Messages buffer when switching tabs."
   :type 'boolean
-  :group 'gptel-tab)
+  :group 'gptel)
 
 ;;* Variables definition
 
