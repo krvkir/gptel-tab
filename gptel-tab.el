@@ -9,6 +9,7 @@
 
 (require 'tab-bar)
 (require 'gptel)
+(require 'gptel-context)
 
 ;;* Customizations
 
